@@ -52,10 +52,11 @@ app.post('/api/tasks', (req, res) => {
 });
 
 // Only start the server if run directly (allows Jest to import app without binding port)
+/* istanbul ignore next */
 if (require.main === module) {
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-        console.log(`Task Management API running on port ${PORT}`);
+        console.log('Task Management API running on port ${PORT}');
     });
 }
 
