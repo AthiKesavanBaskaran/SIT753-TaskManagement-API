@@ -78,7 +78,7 @@ pipeline {
                     bat """
                         npx sonarqube-scanner ^
                         -Dsonar.host.url=${SONAR_HOST_URL} ^
-                        -Dsonar.token=%SONAR_TOKEN% ^
+                        -Dsonar.login=%SONAR_TOKEN% ^
                         -Dsonar.qualitygate.wait=true
                     """
                 }
