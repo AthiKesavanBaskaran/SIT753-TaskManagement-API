@@ -114,7 +114,7 @@ pipeline {
                     exit /b 0
                 """
                 bat '''
-                    echo IMAGE=%FULL_IMAGE% > .env
+                    echo IMAGE=%FULL_IMAGE%> .env
                     docker-compose up -d staging
                 '''
                 script {
@@ -141,7 +141,7 @@ pipeline {
                     exit /b 0
                 """
                 bat '''
-                    echo IMAGE=%FULL_IMAGE% > .env
+                    echo IMAGE=%FULL_IMAGE%> .env
                     docker-compose up -d production
                 '''
                 script {
@@ -154,7 +154,7 @@ pipeline {
                         if (env.PREVIOUS_PRODUCTION_IMAGE?.trim()) {
                             bat "docker rm -f ${PRODUCTION_CONTAINER} >nul 2>&1 || exit /b 0"
                             bat '''
-                                echo IMAGE=%PREVIOUS_PRODUCTION_IMAGE% > .env
+                                echo IMAGE=%PREVIOUS_PRODUCTION_IMAGE%> .env
                                 docker-compose up -d production
                             '''
                         }
@@ -169,7 +169,7 @@ pipeline {
                 echo 'STAGE 7 - MONITORING & ALERTING'
                 echo '========================================'
                 bat '''
-                    echo IMAGE=%FULL_IMAGE% > .env
+                    echo IMAGE=%FULL_IMAGE%> .env
                     docker-compose up -d prometheus
                 '''
                 script {
@@ -201,18 +201,21 @@ pipeline {
 }
 
 def waitForHttp(String url, int attempts = 20, int delaySeconds = 3) {
-    def command = '''
-        powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "$url=\'''' + url + '''\'; ^
-        for($i=1; $i -le ''' + attempts + '''; $i++){ ^
-            try { ^
-                $response=Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5; ^
-                if($response.StatusCode -eq 200){ exit 0 } ^
-            } catch { }; ^
-            Start-Sleep -Seconds ''' + delaySeconds + ''' ^
-        }; ^
-        exit 1"
-    '''
-    def result = bat(returnStatus: true, script: command)
+    def result = powershell(returnStatus: true, script: """
+        for (\\$i = 1; \\$i -le ${attempts}; \\$i++) {
+            try {
+                \\$response = Invoke-WebRequest -Uri '${url}' -UseBasicParsing -TimeoutSec 5
+                if (\\$response.StatusCode -eq 200) {
+                    Write-Host "Success: ${url} is UP"
+                    exit 0
+                }
+            } catch {
+                Write-Host "Waiting for ${url} to respond..."
+            }
+            Start-Sleep -Seconds ${delaySeconds}
+        }
+        Write-Host "Error: Health check timed out for ${url}"
+        exit 1
+    """)
     if (result != 0) { error("Health check failed for ${url}") }
 }
