@@ -201,18 +201,18 @@ pipeline {
 }
 
 def waitForHttp(String url, int attempts = 20, int delaySeconds = 3) {
-    def command = """
+    def command = '''
         powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "\\$url='${url}'; ^
-        for(\\$i=1; \\$i -le ${attempts}; \\$i++){ ^
+        "$url=\'''' + url + '''\'; ^
+        for($i=1; $i -le ''' + attempts + '''; $i++){ ^
             try { ^
-                \\$response=Invoke-WebRequest -Uri \\$url -UseBasicParsing -TimeoutSec 5; ^
-                if(\\$response.StatusCode -eq 200){ exit 0 } ^
+                $response=Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 5; ^
+                if($response.StatusCode -eq 200){ exit 0 } ^
             } catch { }; ^
-            Start-Sleep -Seconds ${delaySeconds} ^
+            Start-Sleep -Seconds ''' + delaySeconds + ''' ^
         }; ^
         exit 1"
-    """
+    '''
     def result = bat(returnStatus: true, script: command)
     if (result != 0) { error("Health check failed for ${url}") }
 }
