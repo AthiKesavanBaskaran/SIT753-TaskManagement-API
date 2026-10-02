@@ -113,7 +113,10 @@ pipeline {
                     docker rm -f ${STAGING_CONTAINER} >nul 2>&1
                     exit /b 0
                 """
-                bat 'set "IMAGE=${FULL_IMAGE}" && docker-compose up -d staging'
+                bat '''
+                    echo IMAGE=%FULL_IMAGE% > .env
+                    docker-compose up -d staging
+                '''
                 script {
                     waitForHttp(env.STAGING_URL, 20, 3)
                 }
@@ -137,7 +140,10 @@ pipeline {
                     docker rm -f ${PRODUCTION_CONTAINER} >nul 2>&1
                     exit /b 0
                 """
-                bat 'set "IMAGE=${FULL_IMAGE}" && docker-compose up -d production'
+                bat '''
+                    echo IMAGE=%FULL_IMAGE% > .env
+                    docker-compose up -d production
+                '''
                 script {
                     waitForHttp(env.PRODUCTION_URL, 20, 3)
                 }
@@ -147,7 +153,10 @@ pipeline {
                     script {
                         if (env.PREVIOUS_PRODUCTION_IMAGE?.trim()) {
                             bat "docker rm -f ${PRODUCTION_CONTAINER} >nul 2>&1 || exit /b 0"
-                            bat 'set "IMAGE=${PREVIOUS_PRODUCTION_IMAGE}" && docker-compose up -d production'
+                            bat '''
+                                echo IMAGE=%PREVIOUS_PRODUCTION_IMAGE% > .env
+                                docker-compose up -d production
+                            '''
                         }
                     }
                 }
@@ -159,7 +168,10 @@ pipeline {
                 echo '========================================'
                 echo 'STAGE 7 - MONITORING & ALERTING'
                 echo '========================================'
-                bat 'set "IMAGE=${FULL_IMAGE}" && docker-compose up -d prometheus'
+                bat '''
+                    echo IMAGE=%FULL_IMAGE% > .env
+                    docker-compose up -d prometheus
+                '''
                 script {
                     waitForHttp(env.PROMETHEUS_URL, 20, 3)
                     waitForHttp(env.METRICS_URL, 20, 3)
