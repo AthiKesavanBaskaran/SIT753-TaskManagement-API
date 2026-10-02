@@ -1,0 +1,11 @@
+groups:
+  - name: API_Alerts
+    rules:
+      - alert: TaskApiDown
+        expr: up{job="taskmanagement-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Task API is down"
+          description: "The Task API production container has been unreachable for more than 1 minute."

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  staging:
+    image: ${IMAGE}
+    container_name: taskmanagement-api-staging
+    ports:
+      - "5001:5000"
+
+  production:
+    image: ${IMAGE}
+    container_name: taskmanagement-api-prod
+    ports:
+      - "5000:5000"
+      
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml
