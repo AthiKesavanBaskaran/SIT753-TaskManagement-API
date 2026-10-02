@@ -17,7 +17,6 @@ pipeline {
         METRICS_URL = 'http://localhost:5000/metrics'
         PROMETHEUS_URL = 'http://localhost:9090/-/healthy'
 
-        PREVIOUS_PRODUCTION_IMAGE = ''
     }
 
     stages {
@@ -131,7 +130,8 @@ pipeline {
                 script {
                     def containerExists = bat(returnStatus: true, script: "docker inspect ${env.PRODUCTION_CONTAINER} >nul 2>&1")
                     if (containerExists == 0) {
-                        env.PREVIOUS_PRODUCTION_IMAGE = bat(returnStdout: true, script: "docker inspect --format=\"{{.Config.Image}}\" ${env.PRODUCTION_CONTAINER}").trim()
+                        env.PREVIOUS_PRODUCTION_IMAGE = bat(returnStdout: true, script: "@docker inspect --format=\"{{.Config.Image}}\" ${env.PRODUCTION_CONTAINER}").trim()
+                        echo "Previous production image: ${env.PREVIOUS_PRODUCTION_IMAGE}"
                     } else {
                         env.PREVIOUS_PRODUCTION_IMAGE = ''
                     }
@@ -201,21 +201,13 @@ pipeline {
 }
 
 def waitForHttp(String url, int attempts = 20, int delaySeconds = 3) {
-    def result = powershell(returnStatus: true, script: """
-        for (\\$i = 1; \\$i -le ${attempts}; \\$i++) {
-            try {
-                \\$response = Invoke-WebRequest -Uri '${url}' -UseBasicParsing -TimeoutSec 5
-                if (\\$response.StatusCode -eq 200) {
-                    Write-Host "Success: ${url} is UP"
-                    exit 0
-                }
-            } catch {
-                Write-Host "Waiting for ${url} to respond..."
-            }
-            Start-Sleep -Seconds ${delaySeconds}
+    for (int i = 1; i <= attempts; i++) {
+        if (bat(returnStatus: true, script: "@curl -fs ${url}") == 0) {
+            echo "Health check passed: ${url}"
+            return
         }
-        Write-Host "Error: Health check timed out for ${url}"
-        exit 1
-    """)
-    if (result != 0) { error("Health check failed for ${url}") }
+        echo "Attempt ${i} failed, retrying..."
+        sleep delaySeconds
+    }
+    error "Health check failed for ${url}"
 }
